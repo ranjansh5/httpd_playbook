@@ -1,14 +1,15 @@
+---
 - hosts: localhost
-  vars:
-    project_root: /var/www/html
+  sudo: yes
   tasks:
-  - name: Install Apache Webserver
-    yum: pkg=httpd state=latest
-  - name: Place the index file at project root
-    copy: src=index.html dest={{ project_root }}/index.html owner=apache group=apache mode=0644
-  - name: Enable Apache on system reboot
-    service: name=httpd enabled=yes
-    notify: restart apache
+    - name: install apache2
+      apt: name=apache2 update_cache=yes state=latest
+
+    - name: enabled mod_rewrite
+      apache2_module: name=rewrite state=present
+      notify:
+        - restart apache2
+
   handlers:
-  - name: restart apache
-    service: name=httpd state=restarted
+    - name: restart apache2
+      service: name=apache2 state=restarted
