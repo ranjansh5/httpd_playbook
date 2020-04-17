@@ -1,17 +1,33 @@
----
-- hosts: localhost
-
+- hosts: all
+  become: yes
+  user: azureuser
+  vars:
+    project_root: /var/www/html
   tasks:
-    - name: install apache2
-      apt: name=apache2 update_cache=yes state=latest
-    - name: Place the index file at project root
-      copy: src=index.html dest=/var/www/html/index.html owner=apache group=apache mode=0644
+    - name: ensure nginx is at the latest version
+      apt: name=nginx state=latest
+    - name: start nginx
+      service:
 
-    - name: enabled mod_rewrite
-      apache2_module: name=rewrite state=present
-      notify:
-        - restart apache2
-
-  handlers:
-    - name: restart apache2
-      service: name=apache2 state=restarted
+          name: nginx
+          state: started
+    - name: copy the nginx config file and restart nginx
+      copy:
+        src: static_site.cfg
+        dest: /etc/nginx/sites-available/static_site.cfg
+      become: yes
+    - name: create symlink
+      file:
+        src: /etc/nginx/sites-available/static_site.cfg
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: yes
+    - name: copy the content of the web site
+      copy:
+        src: static-site-src/
+        dest: /home/foo/static-site
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes
